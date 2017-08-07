@@ -8,17 +8,10 @@ rscala in the context of a [Scalatra](http://scalatra.org/) (Scala based web
 framework) to implement a historical weather application.
 
 Most files were automatically generated from the
-<<<<<<< HEAD
 [Scalatra](http://scalatra.org/) skeleton.  The most relevant file for rscala
 is
 [src/main/scala/org/ddahl/scalatra/Servlet.scala](src/main/scala/org/ddahl/scalatra/Servlet.scala)
 and the user interface is
-=======
-[Scalatra](http://scalatra.org/) skeleton.  The most relevant files for rscala
-are
-[src/main/scala/org/ddahl/scalatra/WebappTemperatureTrait.scala](src/main/scala/org/ddahl/scalatra/WebappTemperatureTrait.scala)
-and
->>>>>>> c30e8f4f6bdb779f8ce930ca6c61f83e665f04b7
 [src/main/twirl/org/ddahl/scalatra/weather.scala.html](src/main/twirl/org/ddahl/scalatra/weather.scala.html).
 
 ## Build & Run ##
