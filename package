@@ -1,0 +1,10 @@
+#!/bin/bash
+
+cd $(dirname $(readlink -f "$0"))
+
+./sbt clean assembly
+FATJAR=$(find target -name '*-assembly-*.jar')
+
+mkdir -p deploy
+cp "$FATJAR" deploy/webapp.jar
+

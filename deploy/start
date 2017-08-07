@@ -1,0 +1,4 @@
+#!/bin/bash
+
+java -DDBDWebApp=temperature -jar webapp.jar
+

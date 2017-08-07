@@ -1,0 +1,4 @@
+#!/bin/bash
+
+pgrep -f DBDWebApp=temperature | xargs -r kill
+
