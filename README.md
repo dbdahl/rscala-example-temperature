@@ -23,7 +23,7 @@ href="https://cran.r-project.org/package=ggplot2">ggplot2</a>, and <a
 href="https://cran.r-project.org/package=rscala">rscala</a>.  Obtain a <a
 href="https://developers.google.com/maps/documentation/geocoding/get-api-key">Google
 Maps Geocoding API Key</a> and a <a href="https://darksky.net/dev">Dark Sky API
-Key</a> and save them to "~/.googleMapsGeocodingAPI" and "~/.darkskyKey",
+Key</a> and save them to "\~/.googleMapsGeocodingAPI" and "\~/.darkskyKey",
 respectively.  Then, do:
 
 ```sh
