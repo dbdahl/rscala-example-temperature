@@ -12,9 +12,9 @@ organization := "org.ddahl"
 
 name := "webapp_temperature"
 
-version := "0.1.0-SNAPSHOT"
+version := "0.2.0-SNAPSHOT"
 
-scalaVersion := "2.12.2"
+scalaVersion := "2.12.3"
 
 resolvers += Classpaths.typesafeReleases
 
@@ -27,7 +27,7 @@ libraryDependencies ++= Seq(
   "javax.servlet" % "javax.servlet-api" % "3.1.0" % "provided"
 )
 
-libraryDependencies += "org.ddahl" %% "rscala" % "2.2.2"
+libraryDependencies += "org.ddahl" %% "rscala" % "2.3.5"
 
 scalateTemplateConfig in Compile := {
   val base = (sourceDirectory in Compile).value

@@ -2,88 +2,84 @@ package org.ddahl.scalatra
 
 import org.scalatra._
 
-case class TemperatureData(location: String, year: String,
-                           minValue: String, minDate: String,
-                           maxValue: String, maxDate: String)
+case class TemperatureData(place: String, label: String, filename: String)
 
 class Servlet extends WebappTemperatureTrait {
 
-  get("/temperature/?") {
-    redirect("/temperature/SFO/1973/index.html")
+  get("/") {
+    redirect("/Provo,%20UT/index.html")
   }
 
-  get("/temperature/:location/:year/?") {
-    redirect("/temperature/"+params("location")+"/"+params("year")+"/index.html")
-  }
-
-  get("/temperature/:location/:year/index.html") {
-    val (loc,yr) = validate(params("location"),params("year"))
-    val temperatureData = getTemperatureData(loc,yr)
-    org.ddahl.scalatra.html.weather.render(temperatureData)
-  }
-
-  get("/temperature/:location/:year/plot.svg") {
-    val (loc,yr) = validate(params("location"),params("year"))
-    val file = new java.io.File(R.synchronized{R.evalS0(s"cache('$loc','$yr')[['filename']]")})
+  get("/:place/plot.svg") {
+    val place = params("place")
+    val file = new java.io.File(R.evalS0(s"cache('$place')[['filename']]"))
     contentType = "image/svg+xml"
     file
   }
 
+  get("/:place/index.html") {
+    val place = params("place")
+    val temperatureData = try {
+      val s1 = R.invokeS1("cache",place)
+      TemperatureData(place,s1(0),s1(1))
+    } catch {
+      case e: Throwable =>
+        e.printStackTrace()
+        TemperatureData(null,null,null)
+    }
+    org.ddahl.scalatra.html.weather.render(temperatureData)
+  }
+
   private val R = org.ddahl.rscala.RClient()
 
-  R.synchronized{ R eval """
-    library(weatherData)
+  R eval """
+    library(httr)
+    googleMapsKey <- readLines("~/.googleMapsGeocodingAPI")
+
+    library(darksky)
+    darkSkyKey <- readLines("~/.darkskyKey")
+    Sys.setenv(DARKSKY_API_KEY=darkSkyKey)
+
     library(ggplot2)
     theme_set(theme_gray(base_size=18))
 
     .cache <- new.env()
-    cache <- function(location,year) {
-      key <- paste0(location,"-",year)
+    cache <- function(place) {
+      key <- paste0(toString(Sys.Date()),place)
       if ( exists(key,envir=.cache) ) get(key,envir=.cache)
       else {
-        d <- na.omit(getWeatherForYear(location,year))
+        x <- GET(paste0("https://maps.googleapis.com/maps/api/geocode/json?address=",URLencode(place),"&key=",googleMapsKey))
+        if ( http_status(x)$category != "Success" ) stop(paste0("HTTP status is :",x$status_code))
+        con <- content(x)$results
+        if ( length(con) == 0 ) stop(paste0("Nothing returned."))
+        if ( length(con) > 1 )  stop(paste0("Too many returned."))
+        xx <- con[[1]]
+        label     <- xx$formatted_address
+        longitude <- xx$geometry$location$lng
+        latitude  <- xx$geometry$location$lat
+        now <- get_current_forecast(latitude, longitude)
+        d <- data.frame(
+          Date=as.Date(now$daily$time),
+          Min_TemperatureF=now$daily$apparentTemperatureLow,
+          Max_TemperatureF=now$daily$apparentTemperatureHigh
+        )
 
-        maxT <- d[which.max(d$Max_TemperatureF), c("Max_TemperatureF", "Date")]
-        minT <- d[which.min(d$Min_TemperatureF), c("Min_TemperatureF", "Date")]
-        
-        p <- ggplot(d, aes(x=Date)) + coord_cartesian(ylim = c(-10, 110))
+        p <- ggplot(d, aes(x=Date)) + coord_cartesian()  # ylim = c(-10, 110))
         p <- p + labs(x="",y=expression(paste("Temperature (",degree,"F)")))
         p <- p + geom_line(aes(y=Max_TemperatureF))
-        p <- p + stat_smooth(se=FALSE,aes(y=Max_TemperatureF),method="loess",span=0.3)
         p <- p + geom_line(aes(y=Min_TemperatureF))
-        p <- p + stat_smooth(se=FALSE,aes(y=Min_TemperatureF),method="loess",span=0.3)
         p <- p + geom_ribbon(aes(ymin=Min_TemperatureF, ymax=Max_TemperatureF), fill = "tomato", alpha = 0.4)
 
-        fn <- paste0(tempdir(),.Platform$file.sep,key,".svg")
+        fn <- paste0(tempfile(),".svg")
         svg(fn,width=6,height=4)
         print(p)
         dev.off()
 
-        fmt <- "%B %e, %Y"
-        result <- list(filename=fn, minValue=minT[1, 1], minDate=format(minT[1, 2], fmt),
-                                    maxValue=maxT[1, 1], maxDate=format(maxT[1, 2], fmt))
+        result <- c(label=label, filename=fn)
         assign(key,result,envir=.cache)
         result
       }
     }
-  """}
-
-  private val errorTemperatureData = TemperatureData(null,null,"NA","NA","NA","NA")
-
-  private def getTemperatureData(location: String, year: String) = {
-    if ( location == null ) errorTemperatureData
-    else try {
-      val s1 = R.synchronized{R.evalS1(s"unlist(cache('$location','$year'))")}
-      TemperatureData(location,year,s1(1),s1(2),s1(3),s1(4))
-    } catch {
-      case _: Throwable => errorTemperatureData
-    }
-  }
-
-  private def validate(location: String, year: String): (String,String) = {
-    if ( location.matches("\\w{3,4}") && year.matches("\\d{4}") ) (location.toUpperCase,year)
-    else (null,null)
-  }
+  """
 
 }
-
